@@ -151,6 +151,13 @@ function findTagClose(str: string): number {
   return open > -1 ? str.length : close;
 }
 
+const envDoesntCloneEmptyTextNodes = (() => {
+  const container = document.createElement('template');
+  container.content.appendChild(document.createTextNode(''));
+
+  return !document.importNode(container.content, true).childNodes.length;
+})();
+
 /**
  * A placeholder for a dynamic expression in an HTML template.
  *
@@ -263,16 +270,18 @@ export class Template {
         // These nodes are also used as the markers for node parts
         for (let i = 0; i < lastIndex; i++) {
           // IE doesn't clone empty text nodes, so use comments instead
-          previousNode = strings[i] === '' ? document.createComment('') :
-            document.createTextNode(strings[i]);
+          previousNode = document.createTextNode(
+              envDoesntCloneEmptyTextNodes && strings[i] === '' ? marker :
+                                                                  strings[i]);
           parent.insertBefore(previousNode, node);
           this.parts.push(new TemplatePart('node', index++));
         }
 
         parent.insertBefore(
-            strings[lastIndex] === '' ?
-                document.createComment('') :
-                document.createTextNode(strings[lastIndex]),
+            document.createTextNode(
+                envDoesntCloneEmptyTextNodes && strings[lastIndex] === '' ?
+                    marker :
+                    strings[lastIndex]),
             node);
         nodesToRemove.push(node);
       } else if (
@@ -292,7 +301,10 @@ export class Template {
         const previousSibling = node.previousSibling;
         if (previousSibling === null || previousSibling !== previousNode ||
             previousSibling.nodeType !== Node.TEXT_NODE) {
-          parent.insertBefore(document.createComment(''), node);
+          parent.insertBefore(
+              document.createTextNode(
+                  envDoesntCloneEmptyTextNodes ? marker : ''),
+              node);
         } else {
           index--;
         }
@@ -302,7 +314,10 @@ export class Template {
         // We don't have to check if the next node is going to be removed,
         // because that node will induce a new marker if so.
         if (node.nextSibling === null) {
-          parent.insertBefore(document.createComment(''), node);
+          parent.insertBefore(
+              document.createTextNode(
+                  envDoesntCloneEmptyTextNodes ? marker : ''),
+              node);
         } else {
           index--;
         }
@@ -630,6 +645,18 @@ export class TemplateInstance {
     const parts = this.template.parts;
 
     if (parts.length > 0) {
+      if (envDoesntCloneEmptyTextNodes) {
+        // Edge needs all 4 parameters present; IE11 needs 3rd parameter to be
+        // null
+        const textWalker = document.createTreeWalker(
+            fragment, 4 /* NodeFilter.SHOW_TEXT */, null as any, false);
+        while (textWalker.nextNode()) {
+          if (textWalker.currentNode.nodeValue === marker) {
+            textWalker.currentNode.nodeValue = '';
+          }
+        }
+      }
+
       // Edge needs all 4 parameters present; IE11 needs 3rd parameter to be
       // null
       const walker = document.createTreeWalker(
