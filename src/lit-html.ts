@@ -327,9 +327,9 @@ export class Template {
     }
 
     // Remove text binding nodes after the walk to not disturb the TreeWalker
-    for (const n of nodesToRemove) {
+    nodesToRemove.forEach((n) => {
       n.parentNode!.removeChild(n);
-    }
+    });
   }
 
   /**
@@ -421,10 +421,10 @@ export class AttributePart implements MultiPart {
       const v = getValue(this, values[startIndex + i]);
       if (v && v !== directiveValue &&
           (Array.isArray(v) || typeof v !== 'string' && v[Symbol.iterator])) {
-        for (const t of v) {
+        v.forEach((t:any) => {
           // TODO: we need to recursively call getValue into iterables...
           text += t;
-        }
+        });
       } else {
         text += v;
       }
@@ -543,7 +543,7 @@ export class NodePart implements SinglePart {
     const itemParts = this._previousValue as any[];
     let partIndex = 0;
 
-    for (const item of value) {
+    value.forEach((item:any) => {
       // Try to reuse an existing part
       let itemPart = itemParts[partIndex];
 
@@ -565,7 +565,7 @@ export class NodePart implements SinglePart {
       }
       itemPart.setValue(item);
       partIndex++;
-    }
+    });
 
     if (partIndex === 0) {
       this.clear();
@@ -629,7 +629,7 @@ export class TemplateInstance {
 
   update(values: any[]) {
     let valueIndex = 0;
-    for (const part of this._parts) {
+    this._parts.forEach((part) => {
       if (part.size === undefined) {
         (part as SinglePart).setValue(values[valueIndex]);
         valueIndex++;
@@ -637,7 +637,7 @@ export class TemplateInstance {
         (part as MultiPart).setValue(values, valueIndex);
         valueIndex += part.size;
       }
-    }
+    });
   }
 
   _clone(): DocumentFragment {
