@@ -421,7 +421,7 @@ export class AttributePart implements MultiPart {
       const v = getValue(this, values[startIndex + i]);
       if (v && v !== directiveValue &&
           (Array.isArray(v) || typeof v !== 'string' && v[Symbol.iterator])) {
-        v.forEach((t:any) => {
+        v.forEach((t: any) => {
           // TODO: we need to recursively call getValue into iterables...
           text += t;
         });
@@ -543,7 +543,7 @@ export class NodePart implements SinglePart {
     const itemParts = this._previousValue as any[];
     let partIndex = 0;
 
-    value.forEach((item:any) => {
+    value.forEach((item: any) => {
       // Try to reuse an existing part
       let itemPart = itemParts[partIndex];
 
